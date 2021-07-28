@@ -305,6 +305,7 @@ def FlashAnalysis(x, y, w, h, gray, sf):
         
     print(time.time())
     imcutgray = gray[y - (posh - 1) : y + posh,x - (posw - 1) : x + posw].flatten()
+    #np.savetxt(os.path.splitext(sf)[0] + ".gray.csv", imcutgray, delimiter=',')
     
     print(time.time())
     gavg = np.mean(imcutgray)
@@ -636,6 +637,7 @@ class mainWin(QWidget):
         ptr.setsize(img.byteCount())
         self.img = np.array(ptr).reshape( img.height(), img.width(), 4)
         self.gray = 0.299*self.img[:,:,0]+0.587*self.img[:,:,1]+0.114*self.img[:,:,2]
+        self.gray = self.gray.astype(np.uint8)
         self.red = self.img[:,:,0]
         self.green = self.img[:,:,1]
         self.blue = self.img[:,:,2]
