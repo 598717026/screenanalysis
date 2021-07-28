@@ -13,7 +13,8 @@ from PyQt5.QtCore import *
 #from PyQt5.QtChart import QChart, QChartView, QLineSeries, QValueAxis
 import numpy as np
 import os
-
+import csv
+import time
 
 
 '''
@@ -276,6 +277,70 @@ def analysis(x, y, w, h, gray, r, g, b, sf = "", vh = 'h'):
     return grayFft, redFft, greenFft, blueFft
 '''
 
+# 闪点分析
+def FlashAnalysis(x, y, w, h, gray, sf):
+    
+    (imgh, imgw) = gray.shape[:2]
+    
+    posw = w
+    posh = h
+    
+    if x == 0:
+        x = 1
+    if y == 0:
+        y = 1
+    
+    if posw == 0:
+        posw = 1
+    if posw > x:
+        posw = x
+    if posw + x >= imgw:
+        posw = imgw - x
+    if posh == 0:
+        posh = 1
+    if posh > y:
+        posh = y
+    if posh + y >= imgh:
+        posh = imgh - y
+        
+    print(time.time())
+    imcutgray = gray[y - (posh - 1) : y + posh,x - (posw - 1) : x + posw].flatten()
+    
+    print(time.time())
+    gavg = np.mean(imcutgray)
+    gmax = np.max(imcutgray)
+    gmin = np.min(imcutgray)
+    print(time.time())
+    gstd = np.std(imcutgray, ddof = 1)
+    print(time.time())
+    hist ,bins = np.histogram(imcutgray,bins=256,range=(0,256))
+    histogram = []
+    for i in range(len(hist)):
+        histogram.append([i, hist[i]])
+        
+    print(time.time())
+    #print(histogram)
+        
+    with open(sf, "w", newline='') as csvfile: 
+        writer = csv.writer(csvfile)
+     
+        #先写入columns_name
+        #writer.writerow(["平均值","最大值","最小值", "标准差"])
+        #print([str(gavg), str(gmax), str(gmin), str(gstd)])
+        #writer.writerows(["+ %f"%(gavg), "+ %f"%(gmax), "+ %f"%(gmin), "+ %f"%(gstd)])
+        
+        writer.writerow(["平均值", gavg])
+        writer.writerow(["最大值", gmax])
+        writer.writerow(["最小值", gmin])
+        writer.writerow(["标准差", gstd])
+        #写入多行用writerows
+        writer.writerow(["直方图"])
+        writer.writerow(["亮度值","统计"])
+        writer.writerows(histogram)
+    
+    return gavg, gmax, gmin, gstd, histogram
+    
+# MTF分析
 def analysis(x, y, w, h, gray, r, g, b, sf = "", vh = 'h'):
 
     (imgh, imgw) = gray.shape[:2]
@@ -496,6 +561,22 @@ class mainWin(QWidget):
         self.layoutSel.addWidget(self.btnH)     #布局添加第二个按钮
         self.widgetSel.setLayout(self.layoutSel)   #界面添加 layout
 
+        self.btnGray = QRadioButton("Gray闪点分析") 
+        self.layoutSel.addWidget(self.btnGray)     #布局添加第二个按钮
+        self.widgetSel.setLayout(self.layoutSel)   #界面添加 layout
+
+        self.btnRed = QRadioButton("Red闪点分析")  
+        self.layoutSel.addWidget(self.btnRed)     #布局添加第二个按钮
+        self.widgetSel.setLayout(self.layoutSel)   #界面添加 layout
+
+        self.btnGreen = QRadioButton("Green闪点分析") 
+        self.layoutSel.addWidget(self.btnGreen)     #布局添加第二个按钮
+        self.widgetSel.setLayout(self.layoutSel)   #界面添加 layout
+
+        self.btnBlue = QRadioButton("Blue闪点分析") 
+        self.layoutSel.addWidget(self.btnBlue)     #布局添加第二个按钮
+        self.widgetSel.setLayout(self.layoutSel)   #界面添加 layout
+
         self.label = myImgLabel(self)
         self.label.setText("   显示图片")
         #self.label.setFixedSize(300, 200)
@@ -587,10 +668,20 @@ class mainWin(QWidget):
     
         if self.btnW.isChecked() == True:
             vh = 'h'
-        else:
+            analysis(x, y, w, h, self.gray, self.red, self.green, self.blue, sf, vh)
+        elif self.btnH.isChecked() == True:
             vh = 'v'
+            analysis(x, y, w, h, self.gray, self.red, self.green, self.blue, sf, vh)
+        elif self.btnGray.isChecked() == True:
+            gavg, gmax, gmin, gstd, histogram = FlashAnalysis(x, y, w, h, self.gray, os.path.splitext(sf)[0] + ".gray.flash.csv")
+        elif self.btnRed.isChecked() == True:
+            gavg, gmax, gmin, gstd, histogram = FlashAnalysis(x, y, w, h, self.red, os.path.splitext(sf)[0] + ".red.flash.csv")
+        elif self.btnGreen.isChecked() == True:
+            gavg, gmax, gmin, gstd, histogram = FlashAnalysis(x, y, w, h, self.green, os.path.splitext(sf)[0] + ".green.flash.csv")
+        elif self.btnBlue.isChecked() == True:
+            gavg, gmax, gmin, gstd, histogram = FlashAnalysis(x, y, w, h, self.gray, os.path.splitext(sf)[0] + ".blue.flash.csv")
             
-        analysis(x, y, w, h, self.gray, self.red, self.green, self.blue, sf, vh)
+            
         
 
 
